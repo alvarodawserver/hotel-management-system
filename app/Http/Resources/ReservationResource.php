@@ -44,7 +44,9 @@ class ReservationResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
             'cancelled_by_customer' => $this->cancelled_by !== null && $this->cancelled_by === $this->user_id,
-            'cancellation_reason' => $this->cancellation_reason,
+            // System reasons are stored in English and translated here; a
+            // reason typed by the hotel has no translation and stays as is.
+            'cancellation_reason' => $this->cancellation_reason !== null ? __($this->cancellation_reason) : null,
             'refund_amount' => $this->refund_amount,
             'refund_status' => $this->refund_status,
             'refund_status_label' => $this->refund_status?->label(),

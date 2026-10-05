@@ -77,7 +77,8 @@ describe('store', function () {
         $user = User::where('email', 'paula@example.com')->sole();
 
         expect($user->role)->toBe(UserRole::Owner)
-            ->and(Hash::check('password', $user->password))->toBeTrue();
+            ->and(Hash::check('password', $user->password))->toBeTrue()
+            ->and($user->hasVerifiedEmail())->toBeTrue();
     });
 
     it('rejects an unknown role', function () {

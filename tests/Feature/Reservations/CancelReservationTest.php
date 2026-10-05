@@ -7,6 +7,9 @@ use App\Models\Hotel;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\User;
+use App\Notifications\ReservationCancelled;
+use App\Notifications\ReservationCancelledByGuest;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
@@ -128,4 +131,24 @@ it('frees the room for new bookings at once', function () {
 
     expect(Room::query()->availableBetween($reservation->check_in, $reservation->check_out)->whereKey($reservation->room_id)->exists())
         ->toBeTrue();
+});
+
+it('emails the customer and the hotel owner when the customer cancels', function () {
+    $reservation = paidStay(4);
+    Notification::fake();
+
+    app(CancelReservation::class)->handle($reservation, $reservation->user);
+
+    Notification::assertSentTo($reservation->user, ReservationCancelled::class, fn (ReservationCancelled $notification) => $notification->refundPercent === 50);
+    Notification::assertSentTo($reservation->hotel->owner, ReservationCancelledByGuest::class);
+});
+
+it('emails only the customer when the hotel cancels', function () {
+    $reservation = paidStay(4);
+    Notification::fake();
+
+    app(CancelReservation::class)->handle($reservation, $reservation->hotel->owner, 'Flooded room');
+
+    Notification::assertSentTo($reservation->user, ReservationCancelled::class, fn (ReservationCancelled $notification) => $notification->refundPercent === 100);
+    Notification::assertNotSentTo($reservation->hotel->owner, ReservationCancelledByGuest::class);
 });

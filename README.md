@@ -46,6 +46,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 ### Across the platform
 
 - Interface in **Spanish and English**, with the language remembered per user.
+- **Emails in each recipient's language**: booking confirmed (with the price breakdown and cancellation policy) and cancellations with the exact refund for travellers; new bookings and guest cancellations for hotel owners. New accounts confirm their email address before booking.
 - **Light and dark mode** with a coastal colour palette.
 - Three roles (admin, owner, customer) with access rules enforced on the server; trying to open a page you can't use takes you back with a message instead of an error page.
 - One single place calculates prices, so the price shown is always the price charged.
@@ -57,7 +58,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - [x] Offers and stay pricing
 - [x] Public catalogue: home page, search with map, comparison and hotel page
 - [x] Reservations and payments with Stripe (with refunds following each hotel's cancellation policy)
-- [ ] Transactional emails in each user's language
+- [x] Transactional emails in each user's language
 - [ ] Reviews and ratings
 - [ ] Dashboards with statistics for owners and admins
 - [ ] Demo data
@@ -140,6 +141,20 @@ All of them use the password `password`.
 3. Pay with the test card `4242 4242 4242 4242`, any future expiry date and any CVC.
 
 `composer dev` also runs the scheduler (`php artisan schedule:work`), which expires unpaid bookings every five minutes in case a webhook is lost.
+
+### Emails
+
+By default emails are written to `storage/logs/laravel.log`. To see them as they would arrive, create a free [Mailtrap](https://mailtrap.io) sandbox inbox and put its SMTP credentials in `.env`:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+```
+
+Emails are sent through the queue, so keep `composer dev` (which runs the queue worker) open. The demo accounts are already verified; accounts you register yourself receive a verification email first.
 
 ### Photo uploads
 

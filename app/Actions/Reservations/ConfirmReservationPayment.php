@@ -5,6 +5,9 @@ namespace App\Actions\Reservations;
 use App\Enums\RefundStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
+use App\Notifications\NewReservationForHotel;
+use App\Notifications\ReservationCancelled;
+use App\Notifications\ReservationConfirmed;
 use Illuminate\Support\Facades\DB;
 
 class ConfirmReservationPayment
@@ -18,6 +21,9 @@ class ConfirmReservationPayment
      * stored here: it is what refunds are made against later. If the payment
      * arrives after the reservation stopped holding its room and the room is
      * no longer free, the payment is refunded in full.
+     *
+     * The customer and the hotel owner are emailed only when the payment is
+     * first handled, so repeated events never send an email twice.
      *
      * @param  array<string, mixed>  $session  The Stripe Checkout Session.
      */
@@ -33,12 +39,12 @@ class ConfirmReservationPayment
             return;
         }
 
-        $needsRefund = DB::transaction(function () use ($reservation, $session): bool {
+        $outcome = DB::transaction(function () use ($reservation, $session): ?ReservationStatus {
             $reservation = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
 
             // This payment was already handled (Stripe repeats events).
             if ($reservation->isConfirmed() || $reservation->paid_at !== null) {
-                return false;
+                return null;
             }
 
             $reservation->forceFill([
@@ -49,23 +55,36 @@ class ConfirmReservationPayment
             if ($this->roomStillFree($reservation)) {
                 $reservation->forceFill(['status' => ReservationStatus::Confirmed])->save();
 
-                return false;
+                return ReservationStatus::Confirmed;
             }
 
+            // Stored in English and translated when shown, like other texts.
             $reservation->forceFill([
                 'status' => ReservationStatus::Cancelled,
                 'cancelled_at' => now(),
-                'cancellation_reason' => __('Payment received after the booking expired; the room was no longer available.'),
+                'cancellation_reason' => 'Payment received after the booking expired; the room was no longer available.',
                 'refund_amount' => $reservation->total_price,
                 'refund_status' => RefundStatus::Pending,
             ])->save();
 
-            return true;
+            return ReservationStatus::Cancelled;
         });
 
-        if ($needsRefund) {
-            $this->refundReservation->handle($reservation->refresh());
+        if ($outcome === null) {
+            return;
         }
+
+        $reservation->refresh();
+
+        if ($outcome === ReservationStatus::Confirmed) {
+            $reservation->user->notify(new ReservationConfirmed($reservation));
+            $reservation->hotel->owner->notify(new NewReservationForHotel($reservation));
+
+            return;
+        }
+
+        $this->refundReservation->handle($reservation);
+        $reservation->user->notify(new ReservationCancelled($reservation, refundPercent: 100));
     }
 
     /**

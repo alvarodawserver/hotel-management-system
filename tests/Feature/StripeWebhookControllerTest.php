@@ -3,6 +3,10 @@
 use App\Enums\RefundStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
+use App\Notifications\NewReservationForHotel;
+use App\Notifications\ReservationCancelled;
+use App\Notifications\ReservationConfirmed;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
 use Tests\Fakes\FakePaymentGateway;
 
@@ -146,4 +150,29 @@ it('records the final state of a refund', function () {
     expect($reservation->refresh())
         ->refund_status->toBe(RefundStatus::Succeeded)
         ->refunded_at->not->toBeNull();
+});
+
+it('emails the customer and the hotel owner once when the payment is confirmed', function () {
+    $reservation = Reservation::factory()->pending()->create();
+    Notification::fake();
+
+    sendStripeEvent('checkout.session.completed', paidSession($reservation))->assertOk();
+    sendStripeEvent('checkout.session.completed', paidSession($reservation))->assertOk();
+
+    Notification::assertSentToTimes($reservation->user, ReservationConfirmed::class, 1);
+    Notification::assertSentToTimes($reservation->hotel->owner, NewReservationForHotel::class, 1);
+});
+
+it('emails the customer a full refund when a late payment finds the room taken', function () {
+    $reservation = Reservation::factory()->expired()->create();
+    Reservation::factory()->forRoom($reservation->room)->create([
+        'check_in' => $reservation->check_in,
+        'check_out' => $reservation->check_out,
+    ]);
+    Notification::fake();
+
+    sendStripeEvent('checkout.session.completed', paidSession($reservation))->assertOk();
+
+    Notification::assertSentTo($reservation->user, ReservationCancelled::class, fn (ReservationCancelled $notification) => $notification->refundPercent === 100);
+    Notification::assertNotSentTo($reservation->hotel->owner, NewReservationForHotel::class);
 });

@@ -85,7 +85,8 @@ class UserController extends Controller
     {
         $user = new User($request->safe()->only(['name', 'email', 'password']));
         $user->role = $request->enum('role', UserRole::class);
-        $user->save();
+        // The admin vouches for the address, so the account works at once.
+        $user->forceFill(['email_verified_at' => now()])->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User created.')]);
 

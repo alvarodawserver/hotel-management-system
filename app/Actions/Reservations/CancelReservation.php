@@ -7,6 +7,8 @@ use App\Enums\RefundStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Notifications\ReservationCancelled;
+use App\Notifications\ReservationCancelledByGuest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -51,6 +53,14 @@ class CancelReservation
         }
 
         $this->refundReservation->handle($reservation);
+
+        $reservation->user->notify(new ReservationCancelled($reservation, $quote->percent));
+
+        // The hotel only needs telling when the guest cancels; when the
+        // owner or an admin cancels, they already know.
+        if ($cancelledBy->id === $reservation->user_id) {
+            $reservation->hotel->owner->notify(new ReservationCancelledByGuest($reservation));
+        }
 
         return $quote;
     }

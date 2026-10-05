@@ -1,0 +1,156 @@
+# Refugio del Mar
+
+**A hotel management system for the Andalusian coast**, from Huelva to Almería.
+
+Refugio del Mar started as my final-degree project (TFG). This repository is a full rebuild of it: same idea, rewritten from scratch now that I have more time and more experience, with a cleaner architecture, tests for every feature, a bilingual interface and a design of its own.
+
+Travellers search and compare hotels in the five coastal provinces, hotel owners manage their hotels, rooms, photos and offers, and administrators keep the platform in order.
+
+## Demo
+
+<!-- demo video -->
+
+> 🎬 Demo video coming soon.
+
+## Features
+
+### For travellers
+
+- **Search** by destination (town, province or hotel name, accent-insensitive, with suggestions as you type), dates, adults and children.
+- **Filters** by price per night, stars, travel style (beach, family-friendly, luxury…) and amenities; sort by recommended or price.
+- **List and map side by side**: hovering a hotel highlights its pin on the map.
+- **Compare** up to three hotels side by side: price for your dates, amenities, travel style and cancellation policy.
+- **Hotel page** with photo gallery, rooms grouped by type with the total price of the stay (night-by-night breakdown, offers already applied), amenities, activities, location map with directions and the cancellation policy in plain words.
+
+### For hotel owners
+
+- Create hotels: description, province, address, stars, amenities, categories and a **tiered cancellation policy** (e.g. full refund up to 7 days before check-in, 50 % up to 3 days before).
+- Place the hotel on the map by **searching its address** and dragging the pin to the exact spot.
+- Add **rooms one by one or in bulk** ("10 doubles numbered from 101").
+- Upload **photos** for the hotel and each room; they are resized and converted to WebP automatically, and can be reordered or set as cover.
+- Informative **activities** (yoga, boat trips, tastings…).
+- **Offers**: a percentage discount for a range of nights, on the whole hotel or one room type. If several offers cover the same night, the best one applies; discounts never stack.
+- Publish or hide the hotel at any time (hiding never cancels existing bookings) and **preview** its public page before publishing.
+
+### For administrators
+
+- **User management**: search, filter, create users with any role, edit, deactivate and reactivate. Users are never deleted, only deactivated, and only when they have no hotels or active bookings.
+- **Hotel moderation**: see every hotel, edit any of them and block those that break the rules, with a reason the owner can read.
+- **Catalogues**: amenities (with icon), categories and room types, each with a name in Spanish and English.
+
+### Across the platform
+
+- Interface in **Spanish and English**, with the language remembered per user.
+- **Light and dark mode** with a coastal colour palette.
+- Three roles (admin, owner, customer) with access rules enforced on the server; trying to open a page you can't use takes you back with a message instead of an error page.
+- One single place calculates prices, so the price shown is always the price charged.
+
+## Roadmap
+
+- [x] Roles, bilingual interface and user management
+- [x] Hotels, rooms, photos, activities and admin catalogues
+- [x] Offers and stay pricing
+- [x] Public catalogue: home page, search with map, comparison and hotel page
+- [ ] Reservations and payments with Stripe (with refunds following each hotel's cancellation policy)
+- [ ] Transactional emails in each user's language
+- [ ] Reviews and ratings
+- [ ] Dashboards with statistics for owners and admins
+- [ ] Demo data
+
+## Tech stack
+
+### This version
+
+| Area              | Technology                                                                 |
+| ----------------- | -------------------------------------------------------------------------- |
+| Backend           | Laravel 13 (PHP 8.4), Laravel Fortify (authentication)                     |
+| Frontend          | React 19, TypeScript, Inertia.js v3, Tailwind CSS v4, shadcn/ui components |
+| Routing           | Laravel Wayfinder (typed routes shared with the frontend)                  |
+| Maps              | Leaflet with OpenStreetMap tiles, Nominatim for address search             |
+| Payments          | Stripe Checkout _(planned, next phase)_                                    |
+| Database          | SQLite                                                                     |
+| Testing & quality | Pest, Larastan (PHPStan), Laravel Pint, TypeScript, Vite+ lint and format  |
+
+### Original TFG stack (for reference)
+
+The first version of the project used Laravel, Inertia, React, TypeScript, Tailwind CSS, Fortify, Wayfinder, Pest and Stripe, with **PostgreSQL** as the database, **Docker** for deployment and a link to **Google Maps** to show each hotel's location. This rebuild uses SQLite for development and replaces the Google Maps link with interactive OpenStreetMap maps built into the pages.
+
+## Getting started
+
+### Requirements
+
+- PHP 8.4 with the GD, EXIF and fileinfo extensions
+- Composer
+- Node.js 22
+
+### Installation
+
+```bash
+git clone https://github.com/alvarodawserver/hotel-management-system.git
+cd hotel-management-system
+
+# Installs dependencies, creates .env, generates the app key, migrates and builds the frontend
+composer setup
+
+# Public storage for uploaded photos, plus demo users and catalogues
+php artisan storage:link
+php artisan migrate:fresh --seed
+
+# Server, queue worker and Vite dev server
+composer dev
+```
+
+Then open http://localhost:8000.
+
+### Demo accounts
+
+All of them use the password `password`.
+
+| Role          | Email                |
+| ------------- | -------------------- |
+| Administrator | admin@example.com    |
+| Hotel owner   | owner@example.com    |
+| Customer      | customer@example.com |
+
+### Photo uploads
+
+Photos can be up to 10 MB each. If uploads fail, raise these values in your `php.ini`:
+
+```ini
+upload_max_filesize = 10M
+post_max_size = 64M
+```
+
+## Tests and code quality
+
+```bash
+composer test          # Pint, PHPStan and the Pest test suite
+npm run check          # Frontend lint and formatting
+npm run types:check    # TypeScript
+```
+
+Run a single test file with `php artisan test --compact tests/Feature/Catalog/HotelSearchTest.php`.
+
+## Project structure
+
+| Path                           | What lives there                                                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/Actions`                  | Business operations shared by several endpoints: pricing (`CalculateStayPrice`), hotel search, visibility, image optimisation, user deactivation… |
+| `app/Http/Controllers/Catalog` | Public pages: home, search, hotel page, comparison                                                                                                |
+| `app/Http/Controllers/Manage`  | Hotel management for owners (and admins)                                                                                                          |
+| `app/Http/Controllers/Admin`   | Administration: users, hotels, catalogues                                                                                                         |
+| `app/Policies`                 | Who can do what with each record                                                                                                                  |
+| `resources/js/pages`           | One React page per screen (`catalog`, `manage`, `admin`, `settings`, `auth`)                                                                      |
+| `resources/js/components`      | Shared UI, grouped by area                                                                                                                        |
+| `lang/es.json`                 | Spanish translations (English is the source language)                                                                                             |
+| `tests/Feature`                | Feature tests, one file per controller or action                                                                                                  |
+
+A few design decisions:
+
+- **Money is stored in cents** and every price goes through `CalculateStayPrice`.
+- **Hotels and rooms are soft-deleted**, so past bookings always keep their data.
+- **Layouts depend on the role**: travellers see a public header and footer; owners and admins get a management sidebar.
+
+## Credits
+
+Maps © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.

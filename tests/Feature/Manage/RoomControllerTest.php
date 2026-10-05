@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Hotel;
+use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\User;
@@ -143,5 +144,16 @@ describe('update and destroy', function () {
             ->assertRedirect(route('manage.hotels.rooms.index', $room->hotel));
 
         expect($room->refresh()->trashed())->toBeTrue();
+    });
+
+    it('refuses to delete a room with active reservations', function () {
+        $reservation = Reservation::factory()->stay(10)->create();
+        $room = $reservation->room;
+
+        $this->actingAs($room->hotel->owner)
+            ->delete(route('manage.hotels.rooms.destroy', [$room->hotel, $room]))
+            ->assertSessionHasErrors(['room' => 'This room has active reservations and cannot be deleted. You can deactivate it instead.']);
+
+        expect($room->refresh()->trashed())->toBeFalse();
     });
 });

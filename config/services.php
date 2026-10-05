@@ -36,6 +36,16 @@ return [
     ],
 
     /*
+    | Stripe Checkout for reservation payments and refunds. Use test-mode keys
+    | locally; the webhook secret comes from `stripe listen` (whsec_...).
+    */
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
+    /*
     | OpenStreetMap's geocoder. Its usage policy requires an identifying
     | User-Agent and at most one request per second, so results are cached.
     */

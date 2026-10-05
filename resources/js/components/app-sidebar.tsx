@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BedDouble,
+    CalendarCheck,
     Globe,
     Hotel,
     LayoutGrid,
@@ -27,6 +28,7 @@ import { index as adminHotelsIndex } from '@/routes/admin/hotels';
 import { index as adminRoomTypesIndex } from '@/routes/admin/room-types';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as manageHotelsIndex } from '@/routes/manage/hotels';
+import { index as manageReservationsIndex } from '@/routes/manage/reservations';
 import type { NavItem, UserRole } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -51,6 +53,11 @@ const navGroupsByRole: Record<UserRole, NavGroup[]> = {
             items: [
                 { title: 'Users', href: adminUsersIndex(), icon: Users },
                 { title: 'Hotels', href: adminHotelsIndex(), icon: Hotel },
+                {
+                    title: 'Reservations',
+                    href: manageReservationsIndex(),
+                    icon: CalendarCheck,
+                },
             ],
         },
         {
@@ -79,6 +86,11 @@ const navGroupsByRole: Record<UserRole, NavGroup[]> = {
             label: 'My business',
             items: [
                 { title: 'My hotels', href: manageHotelsIndex(), icon: Hotel },
+                {
+                    title: 'Reservations',
+                    href: manageReservationsIndex(),
+                    icon: CalendarCheck,
+                },
             ],
         },
     ],

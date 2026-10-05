@@ -20,7 +20,10 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - **Filters** by price per night, stars, travel style (beach, family-friendly, luxury…) and amenities; sort by recommended or price.
 - **List and map side by side**: hovering a hotel highlights its pin on the map.
 - **Compare** up to three hotels side by side: price for your dates, amenities, travel style and cancellation policy.
-- **Hotel page** with photo gallery, rooms grouped by type with the total price of the stay (night-by-night breakdown, offers already applied), amenities, activities, location map with directions and the cancellation policy in plain words.
+- **Hotel page** with photo gallery, rooms grouped by type with the total price of the stay (night-by-night breakdown, offers already applied) and how many are still free for your dates, amenities, activities, location map with directions and the cancellation policy in plain words.
+- **Book and pay online** with Stripe Checkout. The room is held for 30 minutes while you pay, and two people can never book the same room for the same nights.
+- **My reservations**: upcoming, past and cancelled stays, each with its booking code and price breakdown.
+- **Cancel up to the check-in day** and get the refund back on your card automatically, following the hotel's cancellation tiers. The cancel dialog tells you the exact amount before you confirm.
 
 ### For hotel owners
 
@@ -31,12 +34,14 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - Informative **activities** (yoga, boat trips, tastings…).
 - **Offers**: a percentage discount for a range of nights, on the whole hotel or one room type. If several offers cover the same night, the best one applies; discounts never stack.
 - Publish or hide the hotel at any time (hiding never cancels existing bookings) and **preview** its public page before publishing.
+- **Reservations** of their hotels, with filters, the guest's contact details and requests. If the hotel cannot honour a booking, the owner cancels it with a reason and the guest gets a full refund.
 
 ### For administrators
 
 - **User management**: search, filter, create users with any role, edit, deactivate and reactivate. Users are never deleted, only deactivated, and only when they have no hotels or active bookings.
 - **Hotel moderation**: see every hotel, edit any of them and block those that break the rules, with a reason the owner can read.
 - **Catalogues**: amenities (with icon), categories and room types, each with a name in Spanish and English.
+- **Every reservation** on the platform, with a filter for refunds that failed and a button to retry them safely.
 
 ### Across the platform
 
@@ -51,7 +56,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - [x] Hotels, rooms, photos, activities and admin catalogues
 - [x] Offers and stay pricing
 - [x] Public catalogue: home page, search with map, comparison and hotel page
-- [ ] Reservations and payments with Stripe (with refunds following each hotel's cancellation policy)
+- [x] Reservations and payments with Stripe (with refunds following each hotel's cancellation policy)
 - [ ] Transactional emails in each user's language
 - [ ] Reviews and ratings
 - [ ] Dashboards with statistics for owners and admins
@@ -67,7 +72,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 | Frontend          | React 19, TypeScript, Inertia.js v3, Tailwind CSS v4, shadcn/ui components |
 | Routing           | Laravel Wayfinder (typed routes shared with the frontend)                  |
 | Maps              | Leaflet with OpenStreetMap tiles, Nominatim for address search             |
-| Payments          | Stripe Checkout _(planned, next phase)_                                    |
+| Payments          | Stripe Checkout, webhooks and automatic refunds (stripe-php)               |
 | Database          | SQLite                                                                     |
 | Testing & quality | Pest, Larastan (PHPStan), Laravel Pint, TypeScript, Vite+ lint and format  |
 
@@ -96,7 +101,7 @@ composer setup
 php artisan storage:link
 php artisan migrate:fresh --seed
 
-# Server, queue worker and Vite dev server
+# Server, queue worker, scheduler and Vite dev server
 composer dev
 ```
 
@@ -112,6 +117,30 @@ All of them use the password `password`.
 | Hotel owner   | owner@example.com    |
 | Customer      | customer@example.com |
 
+### Payments with Stripe (test mode)
+
+1. Copy your **test** keys from the Stripe dashboard (Developers → API keys) into `.env`:
+
+    ```env
+    STRIPE_KEY=pk_test_...
+    STRIPE_SECRET=sk_test_...
+    ```
+
+2. Install the [Stripe CLI](https://docs.stripe.com/stripe-cli), log in once and forward webhooks to your local app:
+
+    ```bash
+    stripe login
+    stripe listen \
+      --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired,refund.updated \
+      --forward-to localhost:8000/stripe/webhook
+    ```
+
+    The command prints a signing secret; put it in `.env` as `STRIPE_WEBHOOK_SECRET=whsec_...`. Without it, payments are never confirmed locally, because Stripe cannot reach `localhost` on its own.
+
+3. Pay with the test card `4242 4242 4242 4242`, any future expiry date and any CVC.
+
+`composer dev` also runs the scheduler (`php artisan schedule:work`), which expires unpaid bookings every five minutes in case a webhook is lost.
+
 ### Photo uploads
 
 Photos can be up to 10 MB each. If uploads fail, raise these values in your `php.ini`:
@@ -120,6 +149,8 @@ Photos can be up to 10 MB each. If uploads fail, raise these values in your `php
 upload_max_filesize = 10M
 post_max_size = 64M
 ```
+
+On **Windows**, if every upload fails with "failed to upload", also set `upload_tmp_dir` to a writable folder (for example your `%TEMP%`). `php artisan serve` does not pass the `TEMP` variable to PHP's built-in server, so PHP otherwise tries to write uploads to `C:\Windows`.
 
 ## Tests and code quality
 
@@ -137,7 +168,7 @@ Run a single test file with `php artisan test --compact tests/Feature/Catalog/Ho
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app/Actions`                  | Business operations shared by several endpoints: pricing (`CalculateStayPrice`), hotel search, visibility, image optimisation, user deactivation… |
 | `app/Http/Controllers/Catalog` | Public pages: home, search, hotel page, comparison                                                                                                |
-| `app/Http/Controllers/Manage`  | Hotel management for owners (and admins)                                                                                                          |
+| `app/Http/Controllers/Manage`  | Hotel management and reservations for owners (and admins)                                                                                         |
 | `app/Http/Controllers/Admin`   | Administration: users, hotels, catalogues                                                                                                         |
 | `app/Policies`                 | Who can do what with each record                                                                                                                  |
 | `resources/js/pages`           | One React page per screen (`catalog`, `manage`, `admin`, `settings`, `auth`)                                                                      |
@@ -148,6 +179,7 @@ Run a single test file with `php artisan test --compact tests/Feature/Catalog/Ho
 A few design decisions:
 
 - **Money is stored in cents** and every price goes through `CalculateStayPrice`.
+- **Stripe sits behind a `PaymentGateway` interface**, so tests use a fake and never call Stripe. Refunds are made on the payment (PaymentIntent) saved by the webhook, with an idempotency key per reservation, so a retry can never refund twice.
 - **Hotels and rooms are soft-deleted**, so past bookings always keep their data.
 - **Layouts depend on the role**: travellers see a public header and footer; owners and admins get a management sidebar.
 

@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Models\Hotel;
+use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -224,6 +225,29 @@ describe('deactivate', function () {
             ->assertSessionHasNoErrors();
 
         expect($owner->refresh()->isActive())->toBeFalse();
+    });
+
+    it('refuses to deactivate a customer with an upcoming reservation', function () {
+        $admin = User::factory()->admin()->create();
+        $customer = Reservation::factory()->stay(10)->create()->user;
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.deactivate', $customer))
+            ->assertSessionHasErrors(['user' => 'The customer has 1 active reservation; it must end or be cancelled before deactivating the account.']);
+
+        expect($customer->refresh()->isActive())->toBeTrue();
+    });
+
+    it('deactivates a customer whose reservations are over or cancelled', function () {
+        $admin = User::factory()->admin()->create();
+        $customer = Reservation::factory()->stay(-10)->create()->user;
+        Reservation::factory()->for($customer)->cancelled()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.deactivate', $customer))
+            ->assertSessionHasNoErrors();
+
+        expect($customer->refresh()->isActive())->toBeFalse();
     });
 
     it('rejects deactivating an account that is already deactivated', function () {

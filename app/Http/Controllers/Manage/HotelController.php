@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -141,6 +142,12 @@ class HotelController extends Controller
     public function destroy(Request $request, Hotel $hotel): RedirectResponse
     {
         Gate::authorize('delete', $hotel);
+
+        if ($hotel->reservations()->active()->exists()) {
+            throw ValidationException::withMessages([
+                'hotel' => __('This hotel has active reservations and cannot be deleted. You can hide it instead.'),
+            ]);
+        }
 
         $hotel->delete();
 

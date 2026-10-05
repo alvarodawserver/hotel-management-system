@@ -26,10 +26,17 @@ class HotelVisibilityController extends Controller
         $visible = (bool) $validated['is_visible'];
         $changeVisibility->handle($hotel, $visible);
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => $visible ? __('The hotel is now visible.') : __('The hotel is now hidden.'),
-        ]);
+        // Hiding only stops new bookings; existing ones are kept.
+        $upcomingCount = $visible ? 0 : $hotel->reservations()->active()->count();
+
+        Inertia::flash('toast', match (true) {
+            $visible => ['type' => 'success', 'message' => __('The hotel is now visible.')],
+            $upcomingCount > 0 => ['type' => 'warning', 'message' => trans_choice(
+                'The hotel is now hidden. It has :count upcoming reservation, which is not cancelled.|The hotel is now hidden. It has :count upcoming reservations, which are not cancelled.',
+                $upcomingCount,
+            )],
+            default => ['type' => 'success', 'message' => __('The hotel is now hidden.')],
+        });
 
         return back();
     }

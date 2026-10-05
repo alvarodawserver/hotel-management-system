@@ -68,6 +68,13 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Where the hotels are. Used to decide "today" for check-in dates and
+    | cancellation deadlines, independently of the server timezone.
+    */
+
+    'hotel_timezone' => 'Europe/Madrid',
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

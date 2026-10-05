@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { LayoutGrid, LogOut, Settings } from 'lucide-react';
+import { CalendarCheck, LayoutGrid, LogOut, Settings } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -11,6 +11,7 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard, logout } from '@/routes';
 import { edit } from '@/routes/profile';
+import { index as reservationsIndex } from '@/routes/reservations';
 import type { User } from '@/types';
 
 type Props = {
@@ -46,6 +47,18 @@ export function UserMenuContent({ user, showManagementLink = false }: Props) {
                         >
                             <LayoutGrid className="mr-2" />
                             {t('Management panel')}
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                {user.role === 'customer' && (
+                    <DropdownMenuItem asChild>
+                        <Link
+                            className="block w-full cursor-pointer"
+                            href={reservationsIndex()}
+                            onClick={cleanup}
+                        >
+                            <CalendarCheck className="mr-2" />
+                            {t('My reservations')}
                         </Link>
                     </DropdownMenuItem>
                 )}

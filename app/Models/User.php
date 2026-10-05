@@ -111,6 +111,16 @@ class User extends Authenticatable implements HasLocalePreference
     }
 
     /**
+     * Reservations the user made as a customer.
+     *
+     * @return HasMany<Reservation, $this>
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    /**
      * Get the user's preferred locale, used for notifications and mail.
      */
     public function preferredLocale(): ?string

@@ -25,3 +25,15 @@ it('has no new hotels when none joined recently', function () {
     $this->get(route('home'))
         ->assertInertia(fn (Assert $page) => $page->has('newHotels', 0));
 });
+
+it('counts the published hotels of each province', function () {
+    Hotel::factory()->visible()->count(2)->create(['province' => 'cadiz']);
+    Hotel::factory()->create(['province' => 'cadiz']);
+    Hotel::factory()->visible()->blocked()->create(['province' => 'malaga']);
+
+    $this->get(route('home'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('provinces.1.value', 'cadiz')
+            ->where('provinces.1.hotels_count', 2)
+            ->where('provinces.2.hotels_count', 0));
+});

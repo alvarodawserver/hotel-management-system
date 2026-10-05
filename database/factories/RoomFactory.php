@@ -23,7 +23,7 @@ class RoomFactory extends Factory
             'hotel_id' => Hotel::factory(),
             'room_type_id' => RoomType::factory(),
             'name' => (string) fake()->unique()->numberBetween(100, 999),
-            'capacity' => fake()->numberBetween(1, 4),
+            'capacity' => 2,
             'price_per_night' => fake()->numberBetween(50, 300) * 100,
             'description' => null,
             'is_active' => true,

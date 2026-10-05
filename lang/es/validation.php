@@ -247,6 +247,13 @@ return [
         'q' => 'destino',
         'ids' => 'hoteles',
         'sort' => 'orden',
+        'hotel' => 'hotel',
+        'price_per_night' => 'precio por noche',
+        'guest_name' => 'nombre del huésped',
+        'guest_phone' => 'teléfono de contacto',
+        'special_requests' => 'peticiones especiales',
+        'from' => 'estancia desde',
+        'to' => 'estancia hasta',
     ],
 
 ];

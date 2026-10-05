@@ -7,6 +7,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import PublicLayout from '@/layouts/public-layout';
 import RoleLayout from '@/layouts/role-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { keepPagesFresh } from '@/lib/fresh-pages';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Refugio del Mar';
 
@@ -16,6 +17,7 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
             case name.startsWith('catalog/'):
+            case name.startsWith('reservations/'):
                 return PublicLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
@@ -41,3 +43,5 @@ void createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+keepPagesFresh();

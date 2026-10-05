@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Clock, Eye, MapPin, Navigation, Users } from 'lucide-react';
 import { useState } from 'react';
 import CancellationPolicyText from '@/components/catalog/cancellation-policy-text';
@@ -15,6 +15,7 @@ import { amenityIcon } from '@/lib/amenity-icons';
 import { formatPrice } from '@/lib/utils';
 import { index as hotelsIndex, show } from '@/routes/hotels';
 import { edit } from '@/routes/manage/hotels';
+import { create as createReservation } from '@/routes/reservations';
 import type { PublicHotel, RoomGroup, SearchCriteria } from '@/types';
 
 type Props = {
@@ -122,7 +123,88 @@ function StayForm({
     );
 }
 
-function RoomOption({ group }: { group: RoomGroup }) {
+function BookButton({
+    group,
+    hotelSlug,
+    criteria,
+    isPreview,
+}: {
+    group: RoomGroup;
+    hotelSlug: string;
+    criteria: SearchCriteria;
+    isPreview: boolean;
+}) {
+    const { t } = useTranslation();
+    const { auth } = usePage().props;
+
+    if (!criteria.check_in || !criteria.check_out) {
+        return (
+            <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => document.getElementById('stay-in')?.focus()}
+            >
+                {t('Choose dates to book')}
+            </Button>
+        );
+    }
+
+    if (group.available_count === 0) {
+        return (
+            <p className="text-sm font-medium text-muted-foreground">
+                {t('Sold out for these dates')}
+            </p>
+        );
+    }
+
+    if (isPreview || (auth.user && auth.user.role !== 'customer')) {
+        return (
+            <>
+                <Button disabled className="w-full sm:w-auto">
+                    {t('Book')}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                    {isPreview
+                        ? t('Bookings open once the hotel is published.')
+                        : t('Bookings are made with a customer account.')}
+                </p>
+            </>
+        );
+    }
+
+    return (
+        <Button asChild className="w-full sm:w-auto">
+            <Link
+                href={createReservation({
+                    query: {
+                        hotel: hotelSlug,
+                        room_type_id: group.room_type_id,
+                        capacity: group.capacity,
+                        price_per_night: group.price_per_night,
+                        check_in: criteria.check_in,
+                        check_out: criteria.check_out,
+                        adults: criteria.adults,
+                        children: criteria.children,
+                    },
+                })}
+            >
+                {t('Book')}
+            </Link>
+        </Button>
+    );
+}
+
+function RoomOption({
+    group,
+    hotelSlug,
+    criteria,
+    isPreview,
+}: {
+    group: RoomGroup;
+    hotelSlug: string;
+    criteria: SearchCriteria;
+    isPreview: boolean;
+}) {
     const { t, locale } = useTranslation();
     const dateFormatter = new Intl.DateTimeFormat(locale, {
         weekday: 'short',
@@ -157,11 +239,17 @@ function RoomOption({ group }: { group: RoomGroup }) {
                         </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                        {group.rooms_count === 1
-                            ? t('1 room of this type')
-                            : t(':count rooms of this type', {
+                        {group.available_count !== null &&
+                        group.available_count > 0
+                            ? t(':available of :count free for your dates', {
+                                  available: group.available_count,
                                   count: group.rooms_count,
-                              })}
+                              })
+                            : group.rooms_count === 1
+                              ? t('1 room of this type')
+                              : t(':count rooms of this type', {
+                                    count: group.rooms_count,
+                                })}
                     </p>
                 </div>
 
@@ -236,13 +324,12 @@ function RoomOption({ group }: { group: RoomGroup }) {
                         </>
                     )}
                     {group.fits_guests && (
-                        <Button
-                            disabled
-                            className="w-full sm:w-auto"
-                            title={t('Online booking is coming soon')}
-                        >
-                            {t('Booking opens soon')}
-                        </Button>
+                        <BookButton
+                            group={group}
+                            hotelSlug={hotelSlug}
+                            criteria={criteria}
+                            isPreview={isPreview}
+                        />
                     )}
                 </div>
             </div>
@@ -402,7 +489,13 @@ export default function CatalogShow({
                     )}
                     <ul className="space-y-4">
                         {roomGroups.map((group) => (
-                            <RoomOption key={group.key} group={group} />
+                            <RoomOption
+                                key={group.key}
+                                group={group}
+                                hotelSlug={hotel.slug}
+                                criteria={criteria}
+                                isPreview={isPreview}
+                            />
                         ))}
                     </ul>
                 </section>

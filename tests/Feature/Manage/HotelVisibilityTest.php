@@ -2,6 +2,7 @@
 
 use App\Models\Hotel;
 use App\Models\Image;
+use App\Models\Reservation;
 use App\Models\Room;
 
 it('refuses to publish a hotel without an active room or a photo', function () {
@@ -47,6 +48,18 @@ it('always lets the owner hide the hotel', function () {
         ->assertSessionHasNoErrors();
 
     expect($hotel->refresh()->is_visible)->toBeFalse();
+});
+
+it('warns that hiding a hotel keeps its upcoming reservations', function () {
+    $hotel = Hotel::factory()->visible()->create();
+    $reservation = Reservation::factory()->forRoom(Room::factory()->for($hotel)->create())->stay(10)->create();
+
+    $this->actingAs($hotel->owner)
+        ->put(route('manage.hotels.visibility.update', $hotel), ['is_visible' => false])
+        ->assertInertiaFlash('toast.type', 'warning')
+        ->assertInertiaFlash('toast.message', 'The hotel is now hidden. It has 1 upcoming reservation, which is not cancelled.');
+
+    expect($reservation->refresh()->isConfirmed())->toBeTrue();
 });
 
 it('keeps blocked hotels out of the published scope even when visible', function () {

@@ -186,6 +186,14 @@ class Hotel extends Model
     }
 
     /**
+     * @return HasMany<Reservation, $this>
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    /**
      * @return HasMany<Offer, $this>
      */
     public function offers(): HasMany

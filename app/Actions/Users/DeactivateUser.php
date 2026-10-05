@@ -12,7 +12,7 @@ class DeactivateUser
      *
      * Business rules:
      * - an owner cannot be deactivated while they still have hotels;
-     * - a customer cannot be deactivated while they have active reservations (phase 5).
+     * - a customer cannot be deactivated while they have active reservations.
      *
      * @throws ValidationException
      */
@@ -41,6 +41,17 @@ class DeactivateUser
                 'user' => trans_choice(
                     'The owner has :count hotel; delete it before deactivating the account.|The owner has :count hotels; delete them before deactivating the account.',
                     $hotelCount,
+                ),
+            ]);
+        }
+
+        $reservationCount = $user->reservations()->active()->count();
+
+        if ($reservationCount > 0) {
+            throw ValidationException::withMessages([
+                'user' => trans_choice(
+                    'The customer has :count active reservation; it must end or be cancelled before deactivating the account.|The customer has :count active reservations; they must end or be cancelled before deactivating the account.',
+                    $reservationCount,
                 ),
             ]);
         }

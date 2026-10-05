@@ -7,6 +7,7 @@ use App\Http\Controllers\Manage\HotelController;
 use App\Http\Controllers\Manage\HotelImageController;
 use App\Http\Controllers\Manage\HotelVisibilityController;
 use App\Http\Controllers\Manage\OfferController;
+use App\Http\Controllers\Manage\ReservationController;
 use App\Http\Controllers\Manage\RoomController;
 use App\Http\Controllers\Manage\RoomImageController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,11 @@ Route::middleware(['auth', 'verified', 'role:owner,admin'])
             Route::resource('hotels.activities', ActivityController::class)->only(['index', 'store', 'update', 'destroy']);
             Route::resource('hotels.offers', OfferController::class)->only(['index', 'store', 'update', 'destroy']);
         });
+
+        Route::get('reservations', [ReservationController::class, 'index'])->name('reservations.index');
+        Route::get('reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
+        Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+        Route::post('reservations/{reservation}/refund', [ReservationController::class, 'retryRefund'])->name('reservations.refund');
 
         Route::get('geocode', GeocodeController::class)
             ->middleware('throttle:30,1')

@@ -1,6 +1,8 @@
 <?php
 
+use App\Contracts\PaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Fakes\FakePaymentGateway;
 use Tests\TestCase;
 
 /*
@@ -47,4 +49,12 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * The fake that stands in for Stripe in every test (see TestCase::setUp).
+ */
+function paymentGateway(): FakePaymentGateway
+{
+    return app(PaymentGateway::class);
 }

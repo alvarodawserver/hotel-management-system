@@ -12,6 +12,7 @@ use App\Models\RoomType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -92,6 +93,12 @@ class RoomController extends Controller
     public function destroy(Hotel $hotel, Room $room): RedirectResponse
     {
         Gate::authorize('update', $hotel);
+
+        if ($room->reservations()->active()->exists()) {
+            throw ValidationException::withMessages([
+                'room' => __('This room has active reservations and cannot be deleted. You can deactivate it instead.'),
+            ]);
+        }
 
         $room->delete();
 

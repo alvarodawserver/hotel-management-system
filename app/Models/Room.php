@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -50,10 +51,8 @@ class Room extends Model
     }
 
     /**
-     * Rooms that can host the given number of guests.
-     *
-     * Phase 5 will also exclude rooms with an overlapping reservation for the
-     * given dates, which is why they are already part of the signature.
+     * Active rooms that can host the given number of guests and, when dates
+     * are given, are free for the whole stay.
      *
      * @param  Builder<Room>  $query
      */
@@ -61,6 +60,31 @@ class Room extends Model
     protected function bookableFor(Builder $query, int $guests, ?CarbonInterface $checkIn = null, ?CarbonInterface $checkOut = null): void
     {
         $query->where('is_active', true)->where('capacity', '>=', $guests);
+
+        if ($checkIn !== null && $checkOut !== null) {
+            $query->availableBetween($checkIn, $checkOut);
+        }
+    }
+
+    /**
+     * Rooms without a reservation holding them on any of the given nights.
+     *
+     * @param  Builder<Room>  $query
+     */
+    #[Scope]
+    protected function availableBetween(Builder $query, CarbonInterface $checkIn, CarbonInterface $checkOut): void
+    {
+        $query->whereDoesntHave('reservations', fn (Builder $query) => $query
+            ->blocking()
+            ->overlapping($checkIn, $checkOut));
+    }
+
+    /**
+     * @return HasMany<Reservation, $this>
+     */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
     }
 
     /**

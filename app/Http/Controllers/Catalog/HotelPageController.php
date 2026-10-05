@@ -99,19 +99,40 @@ class HotelPageController extends Controller
      */
     private function roomGroups(Hotel $hotel, array $criteria, CalculateStayPrice $calculateStayPrice): Collection
     {
+        $availableRoomIds = $this->availableRoomIds($hotel, $criteria);
+
         return $hotel->rooms
             ->groupBy(fn (Room $room): string => "{$room->room_type_id}-{$room->capacity}-{$room->price_per_night}")
-            ->map(fn (Collection $rooms, string $key): array => $this->roomGroup($hotel, $rooms, $key, $criteria, $calculateStayPrice))
+            ->map(fn (Collection $rooms, string $key): array => $this->roomGroup($hotel, $rooms, $key, $criteria, $availableRoomIds, $calculateStayPrice))
             ->sortBy('price_per_night')
             ->values();
     }
 
     /**
+     * The active rooms free for the searched dates, or null without dates.
+     *
+     * @param  array{check_in: string|null, check_out: string|null, adults: int, children: int}  $criteria
+     * @return Collection<int, int>|null
+     */
+    private function availableRoomIds(Hotel $hotel, array $criteria): ?Collection
+    {
+        if ($criteria['check_in'] === null || $criteria['check_out'] === null) {
+            return null;
+        }
+
+        return $hotel->rooms()
+            ->where('is_active', true)
+            ->availableBetween(CarbonImmutable::parse($criteria['check_in']), CarbonImmutable::parse($criteria['check_out']))
+            ->pluck('id');
+    }
+
+    /**
      * @param  Collection<int, Room>  $rooms  Identical rooms.
      * @param  array{check_in: string|null, check_out: string|null, adults: int, children: int}  $criteria
+     * @param  Collection<int, int>|null  $availableRoomIds
      * @return array<string, mixed>
      */
-    private function roomGroup(Hotel $hotel, Collection $rooms, string $key, array $criteria, CalculateStayPrice $calculateStayPrice): array
+    private function roomGroup(Hotel $hotel, Collection $rooms, string $key, array $criteria, ?Collection $availableRoomIds, CalculateStayPrice $calculateStayPrice): array
     {
         /** @var Room $room */
         $room = $rooms->first();
@@ -120,10 +141,14 @@ class HotelPageController extends Controller
 
         return [
             'key' => $key,
+            'room_type_id' => $room->room_type_id,
             'room_type' => $room->roomType->translation(),
             'capacity' => $room->capacity,
             'price_per_night' => $room->price_per_night,
             'rooms_count' => $rooms->count(),
+            'available_count' => $availableRoomIds === null
+                ? null
+                : $rooms->filter(fn (Room $room): bool => $availableRoomIds->contains($room->id))->count(),
             'description' => $rooms->pluck('description')->filter()->first(),
             'image_url' => $rooms->flatMap(fn (Room $room): Collection => $room->images)->first()?->url,
             'fits_guests' => $fitsGuests,

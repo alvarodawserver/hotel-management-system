@@ -4,6 +4,7 @@ use App\Enums\Province;
 use App\Models\Amenity;
 use App\Models\Category;
 use App\Models\Hotel;
+use App\Models\Reservation;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -180,5 +181,15 @@ describe('destroy', function () {
             ->assertRedirect(route('manage.hotels.index'));
 
         expect($hotel->refresh()->trashed())->toBeTrue();
+    });
+
+    it('refuses to delete a hotel with active reservations', function () {
+        $reservation = Reservation::factory()->stay(10)->create();
+
+        $this->actingAs($reservation->hotel->owner)
+            ->delete(route('manage.hotels.destroy', $reservation->hotel))
+            ->assertSessionHasErrors(['hotel' => 'This hotel has active reservations and cannot be deleted. You can hide it instead.']);
+
+        expect($reservation->hotel->refresh()->trashed())->toBeFalse();
     });
 });

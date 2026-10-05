@@ -2,6 +2,7 @@
 
 use App\Models\Hotel;
 use App\Models\Offer;
+use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\User;
@@ -63,7 +64,7 @@ it('groups identical active rooms into one option', function () {
 
 it('includes the stay total with the offer when dates are given', function () {
     $hotel = Hotel::factory()->visible()->create();
-    Room::factory()->for($hotel)->create(['price_per_night' => 10000]);
+    Room::factory()->for($hotel)->create(['capacity' => 2, 'price_per_night' => 10000]);
     $checkIn = today()->addDays(7);
     Offer::factory()->for($hotel)->create([
         'discount_percent' => 10,
@@ -78,4 +79,23 @@ it('includes the stay total with the offer when dates are given', function () {
     ]))->assertInertia(fn (Assert $page) => $page
         ->where('roomGroups.0.stay.total', 27000)
         ->where('roomGroups.0.stay.discount', 3000));
+});
+
+it('counts the rooms of each option still free for the dates', function () {
+    $hotel = Hotel::factory()->visible()->create();
+    $rooms = Room::factory()->for($hotel)->count(2)->sequence(['name' => '101'], ['name' => '102'])
+        ->create(['capacity' => 2, 'price_per_night' => 9000, 'room_type_id' => RoomType::factory()->create()->id]);
+    $checkIn = today()->addDays(10);
+    Reservation::factory()->forRoom($rooms[0])->create([
+        'check_in' => $checkIn->toDateString(),
+        'check_out' => $checkIn->copy()->addDays(2)->toDateString(),
+    ]);
+
+    $this->get(route('hotels.show', [
+        'hotel' => $hotel->slug,
+        'check_in' => $checkIn->toDateString(),
+        'check_out' => $checkIn->copy()->addDays(2)->toDateString(),
+    ]))->assertInertia(fn (Assert $page) => $page
+        ->where('roomGroups.0.rooms_count', 2)
+        ->where('roomGroups.0.available_count', 1));
 });

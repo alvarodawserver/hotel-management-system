@@ -59,7 +59,7 @@ class SearchHotels
         $guests = $this->guests($criteria);
         [$checkIn, $checkOut, $hasDates] = $this->stayRange($criteria);
 
-        $cards = $this->candidates($criteria, $guests, $checkIn, $checkOut)
+        $cards = $this->candidates($criteria, $guests, $checkIn, $checkOut, $hasDates)
             ->filter(fn (Hotel $hotel): bool => $this->matchesDestination($hotel, $criteria['q'] ?? null))
             ->map(fn (Hotel $hotel): array => $this->card($hotel, $checkIn, $checkOut, $hasDates))
             ->filter(fn (array $card): bool => $this->matchesPrice($card, $criteria));
@@ -79,7 +79,7 @@ class SearchHotels
         [$checkIn, $checkOut, $hasDates] = $this->stayRange($criteria);
 
         $hotel->loadMissing([
-            'rooms' => fn ($query) => $query->bookableFor($this->guests($criteria), $checkIn, $checkOut),
+            'rooms' => fn ($query) => $query->bookableFor($this->guests($criteria), ...$this->availabilityRange($checkIn, $checkOut, $hasDates)),
             'offers' => fn ($query) => $query->activeBetween($checkIn, $checkOut->subDay()),
         ]);
 
@@ -90,11 +90,11 @@ class SearchHotels
      * @param  array{q?: string|null, stars?: int|null, amenities?: list<int>, categories?: list<int>}  $criteria
      * @return Collection<int, Hotel>
      */
-    private function candidates(array $criteria, int $guests, CarbonImmutable $checkIn, CarbonImmutable $checkOut): Collection
+    private function candidates(array $criteria, int $guests, CarbonImmutable $checkIn, CarbonImmutable $checkOut, bool $hasDates): Collection
     {
         return Hotel::query()
             ->published()
-            ->whereHas('rooms', fn (Builder $query) => $query->bookableFor($guests, $checkIn, $checkOut))
+            ->whereHas('rooms', fn (Builder $query) => $query->bookableFor($guests, ...$this->availabilityRange($checkIn, $checkOut, $hasDates)))
             ->when($criteria['stars'] ?? null, fn (Builder $query, int $stars) => $query->where('stars', '>=', $stars))
             // Amenities: the hotel must have every selected one.
             ->when($criteria['amenities'] ?? [], function (Builder $query, array $amenityIds): void {
@@ -108,7 +108,7 @@ class SearchHotels
             ->with([
                 'coverImage',
                 'amenities',
-                'rooms' => fn ($query) => $query->bookableFor($guests, $checkIn, $checkOut),
+                'rooms' => fn ($query) => $query->bookableFor($guests, ...$this->availabilityRange($checkIn, $checkOut, $hasDates)),
                 'offers' => fn ($query) => $query->activeBetween($checkIn, $checkOut->subDay()),
             ])
             ->get();
@@ -245,6 +245,17 @@ class SearchHotels
         $today = CarbonImmutable::today();
 
         return [$today, $today->addDay(), false];
+    }
+
+    /**
+     * Availability is only checked for searched dates; without dates every
+     * active room counts (the "tonight" range is only used for pricing).
+     *
+     * @return array{0: CarbonImmutable|null, 1: CarbonImmutable|null}
+     */
+    private function availabilityRange(CarbonImmutable $checkIn, CarbonImmutable $checkOut, bool $hasDates): array
+    {
+        return $hasDates ? [$checkIn, $checkOut] : [null, null];
     }
 
     private function normalize(string $text): string

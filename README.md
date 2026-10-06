@@ -37,6 +37,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - Publish or hide the hotel at any time (hiding never cancels existing bookings) and **preview** its public page before publishing.
 - **Reservations** of their hotels, with filters, the guest's contact details and requests. If the hotel cannot honour a booking, the owner cancels it with a reason and the guest gets a full refund.
 - **Reviews** of their hotels: reply publicly to guests, and report offensive reviews to the administrators (owners cannot delete reviews, so fair criticism stays).
+- **Dashboard**: revenue this month against last month, occupancy for the next 30 days, today's arrivals and the guest rating; a chart of the last twelve months; what needs their attention (reviews to answer, hotels not public yet and what they lack) and the guests arriving this week.
 
 ### For administrators
 
@@ -45,6 +46,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - **Catalogues**: amenities (with icon), categories and room types, each with a name in Spanish and English.
 - **Every reservation** on the platform, with a filter for refunds that failed and a button to retry them safely.
 - **Review moderation**: reports from owners first; removing a review asks for a reason, takes it out of the hotel's average and emails its author why.
+- **Dashboard**: platform revenue and bookings against last month, published hotels and new users; reported reviews, failed refunds and blocked hotels waiting for action; the hotels with the most revenue and the stays in each province.
 
 ### Across the platform
 
@@ -63,8 +65,8 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - [x] Reservations and payments with Stripe (with refunds following each hotel's cancellation policy)
 - [x] Transactional emails in each user's language
 - [x] Reviews and ratings
-- [ ] Dashboards with statistics for owners and admins
-- [ ] Demo data
+- [x] Demo data
+- [x] Dashboards with statistics for owners and admins
 
 ## Tech stack
 
@@ -101,7 +103,7 @@ cd hotel-management-system
 # Installs dependencies, creates .env, generates the app key, migrates and builds the frontend
 composer setup
 
-# Public storage for uploaded photos, plus demo users and catalogues
+# Public storage for uploaded photos, plus the demo data
 php artisan storage:link
 php artisan migrate:fresh --seed
 
@@ -111,15 +113,26 @@ composer dev
 
 Then open http://localhost:8000.
 
+### Demo data
+
+`php artisan migrate:fresh --seed` fills the coast with fifteen invented hotels in real towns of the five provinces, with rooms, photos, activities and offers, about 2,000 bookings from the last year and the next three months, and the guests' reviews. Dates are relative to the day you run it, so the demo always looks current, and every run produces the same data.
+
+It also includes a hotel still being set up, a hotel blocked by the administrators, two hotels that opened in the last few weeks, a refund that failed, and reviews waiting for moderation, so every screen has something to show.
+
 ### Demo accounts
 
 All of them use the password `password`.
 
-| Role          | Email                |
-| ------------- | -------------------- |
-| Administrator | admin@example.com    |
-| Hotel owner   | owner@example.com    |
-| Customer      | customer@example.com |
+| Role          | Email                      | What you'll find                                                              |
+| ------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| Administrator | admin@example.com          | The whole platform, two reported reviews and a refund to retry                |
+| Hotel owner   | owner@example.com          | Four hotels (one unfinished), guests arriving today and reviews to reply to   |
+| Customer      | customer@example.com       | Upcoming stays, a past stay waiting for a review and a cancelled booking      |
+| Hotel owner   | antonio.marin@example.com  | Five hotels in Cádiz and Huelva, one of them blocked                          |
+| Hotel owner   | sofia.navarro@example.com  | Four hotels in Málaga and Almería, including a five-star with a tiered policy |
+| Hotel owner   | james.whitaker@example.com | Two hotels described in English                                               |
+
+The demo bookings were never paid through Stripe (their payment ids are made up), so cancelling one of them with real Stripe keys marks its refund as failed. To try the real payment and refund flow, make a new booking.
 
 ### Payments with Stripe (test mode)
 
@@ -192,6 +205,7 @@ Run a single test file with `php artisan test --compact tests/Feature/Catalog/Ho
 | `resources/js/pages`           | One React page per screen (`catalog`, `manage`, `admin`, `settings`, `auth`)                                                                      |
 | `resources/js/components`      | Shared UI, grouped by area                                                                                                                        |
 | `lang/es.json`                 | Spanish translations (English is the source language)                                                                                             |
+| `database/seeders`             | Catalogues and demo data: hand-written hotels and reviews in `data/`, demo photos in `images/`                                                    |
 | `tests/Feature`                | Feature tests, one file per controller or action                                                                                                  |
 
 A few design decisions:
@@ -204,3 +218,5 @@ A few design decisions:
 ## Credits
 
 Maps © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
+
+Demo photos from [Unsplash](https://unsplash.com), used under the [Unsplash License](https://unsplash.com/license).

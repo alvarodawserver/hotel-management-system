@@ -1,5 +1,6 @@
 export type * from './auth';
 export type * from './catalog';
+export type * from './dashboard';
 export type * from './hotels';
 export type * from './navigation';
 export type * from './pagination';

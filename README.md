@@ -8,9 +8,9 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 
 ## Demo
 
-<!-- demo video -->
+A guest searches the coast, books and pays with Stripe, and reviews a past stay; then the hotel owner and the administrator take over.
 
-> 🎬 Demo video coming soon.
+https://github.com/user-attachments/assets/9db85686-fab2-4083-a813-8bbb1e176cba
 
 ### Screenshots
 

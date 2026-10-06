@@ -13,7 +13,7 @@ class HotelSearchRequest extends FormRequest
 {
     public const MAX_NIGHTS = 30;
 
-    public const SORTS = ['recommended', 'price_asc', 'price_desc'];
+    public const SORTS = ['recommended', 'rating', 'price_asc', 'price_desc'];
 
     /**
      * Get the validation rules that apply to the request.

@@ -1,5 +1,6 @@
 import type { StayNight } from '@/types/catalog';
 import type { CancellationTier } from '@/types/hotels';
+import type { Review } from '@/types/reviews';
 
 export type ReservationStatus =
     | 'pending'
@@ -50,6 +51,9 @@ export type Reservation = {
         name: string;
         room_type: string;
     };
+    /** Only where the guest's review was loaded (the customer's pages). */
+    can_be_reviewed?: boolean;
+    review?: Review | null;
     /** Only for the hotel's owner and admins. */
     customer?: {
         name: string;

@@ -1,26 +1,38 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Clock, Eye, MapPin, Navigation, Users } from 'lucide-react';
 import { useState } from 'react';
 import CancellationPolicyText from '@/components/catalog/cancellation-policy-text';
 import HotelGallery from '@/components/catalog/hotel-gallery';
 import HotelMap from '@/components/catalog/hotel-map';
 import StarRating from '@/components/catalog/star-rating';
+import RatingBadge from '@/components/reviews/rating-badge';
+import RatingSummary from '@/components/reviews/rating-summary';
+import ReviewCard from '@/components/reviews/review-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { amenityIcon } from '@/lib/amenity-icons';
 import { formatPrice } from '@/lib/utils';
 import { index as hotelsIndex, show } from '@/routes/hotels';
 import { edit } from '@/routes/manage/hotels';
 import { create as createReservation } from '@/routes/reservations';
-import type { PublicHotel, RoomGroup, SearchCriteria } from '@/types';
+import type {
+    PublicHotel,
+    RatingSummary as RatingSummaryData,
+    Review,
+    RoomGroup,
+    SearchCriteria,
+} from '@/types';
 
 type Props = {
     hotel: PublicHotel;
     roomGroups: RoomGroup[];
+    rating: RatingSummaryData;
+    reviews: { data: Review[] };
     criteria: SearchCriteria;
     isPreview: boolean;
 };
@@ -29,6 +41,7 @@ const SECTIONS = [
     { id: 'overview', title: 'Overview' },
     { id: 'rooms', title: 'Rooms and prices' },
     { id: 'amenities', title: 'Amenities and activities' },
+    { id: 'reviews', title: 'Reviews' },
     { id: 'location', title: 'Location' },
     { id: 'policy', title: 'Cancellation policy' },
 ];
@@ -337,9 +350,65 @@ function RoomOption({
     );
 }
 
+function ReviewsSection({
+    rating,
+    reviews,
+}: {
+    rating: RatingSummaryData;
+    reviews: { data: Review[] };
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <section id="reviews" className="scroll-mt-32 space-y-6">
+            <h2 className="font-display text-2xl font-bold">
+                {t('Guest reviews')}
+            </h2>
+            {rating.count === 0 ? (
+                <p className="text-muted-foreground">
+                    {t(
+                        'No reviews yet. Guests can review the hotel after their stay.',
+                    )}
+                </p>
+            ) : (
+                <>
+                    <RatingSummary rating={rating} />
+                    <InfiniteScroll
+                        data="reviews"
+                        manual
+                        onlyNext
+                        preserveUrl
+                        className="grid gap-4 lg:grid-cols-2"
+                        next={({ loading, fetch, hasMore }) =>
+                            hasMore && (
+                                <div className="flex justify-center lg:col-span-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={fetch}
+                                        disabled={loading}
+                                    >
+                                        {loading && <Spinner />}
+                                        {t('Show more reviews')}
+                                    </Button>
+                                </div>
+                            )
+                        }
+                    >
+                        {reviews.data.map((review) => (
+                            <ReviewCard key={review.id} review={review} />
+                        ))}
+                    </InfiniteScroll>
+                </>
+            )}
+        </section>
+    );
+}
+
 export default function CatalogShow({
     hotel,
     roomGroups,
+    rating,
+    reviews,
     criteria,
     isPreview,
 }: Props) {
@@ -388,7 +457,12 @@ export default function CatalogShow({
                 </Link>
 
                 <header className="mt-4 mb-6 space-y-2">
-                    <StarRating stars={hotel.stars} />
+                    <div className="flex flex-wrap items-center gap-3">
+                        <StarRating stars={hotel.stars} />
+                        <a href="#reviews" className="hover:underline">
+                            <RatingBadge rating={rating} />
+                        </a>
+                    </div>
                     <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
                         {hotel.name}
                     </h1>
@@ -569,6 +643,8 @@ export default function CatalogShow({
                         </div>
                     )}
                 </section>
+
+                <ReviewsSection rating={rating} reviews={reviews} />
 
                 <section id="location" className="scroll-mt-32 space-y-4">
                     <h2 className="font-display text-2xl font-bold">

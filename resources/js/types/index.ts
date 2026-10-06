@@ -4,4 +4,5 @@ export type * from './hotels';
 export type * from './navigation';
 export type * from './pagination';
 export type * from './reservations';
+export type * from './reviews';
 export type * from './ui';

@@ -124,3 +124,19 @@ it('rejects a check-out before the check-in', function () {
         'check_out' => today()->addDays(3)->toDateString(),
     ]))->assertSessionHasErrors('check_out');
 });
+
+it('shows the guest rating on each card and sorts by it', function () {
+    $good = searchableHotel(['name' => 'Hotel Bueno']);
+    $best = searchableHotel(['name' => 'Hotel Mejor']);
+    $unrated = searchableHotel(['name' => 'Hotel Aaa']);
+    reviewHotel($good, 4);
+    reviewHotel($best, 5);
+    reviewHotel($best, 4);
+    reviewHotel($best, 1)->delete();
+
+    $response = $this->get(route('hotels.index', ['sort' => 'rating']));
+
+    expect(resultIds($response))->toBe([$best->id, $good->id, $unrated->id])
+        ->and($response->inertiaProps('results.data.0.rating'))->toBe(['average' => 4.5, 'count' => 2])
+        ->and($response->inertiaProps('results.data.2.rating'))->toBe(['average' => null, 'count' => 0]);
+});

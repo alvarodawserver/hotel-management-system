@@ -8,6 +8,7 @@ use App\Http\Controllers\Catalog\HotelSearchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
         Route::post('reservations/{reservation}/pay', [ReservationController::class, 'pay'])->name('reservations.pay');
         Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+
+        Route::post('reservations/{reservation}/review', [ReviewController::class, 'store'])->name('reservations.review.store');
+        Route::put('reservations/{reservation}/review', [ReviewController::class, 'update'])->name('reservations.review.update');
+        Route::delete('reservations/{reservation}/review', [ReviewController::class, 'destroy'])->name('reservations.review.destroy');
     });
 });
 

@@ -40,6 +40,8 @@ use Illuminate\Support\Str;
  * @property-read int|null $rooms_count Loaded with withCount('rooms').
  * @property-read int|null $active_rooms_count Loaded with withCount('rooms as active_rooms_count').
  * @property-read int|null $activities_count Loaded with withCount('activities').
+ * @property-read int|null $reviews_count Loaded with withCount('reviews').
+ * @property-read float|string|null $reviews_avg_rating Loaded with withAvg('reviews', 'rating').
  */
 #[Fillable(['name', 'description', 'province', 'municipality', 'address', 'latitude', 'longitude', 'stars', 'cancellation_policy'])]
 class Hotel extends Model
@@ -164,6 +166,46 @@ class Hotel extends Model
             ->first();
     }
 
+    /**
+     * The guests' average rating (one decimal) and number of reviews, from
+     * the aggregates loaded with withAvg('reviews', 'rating') and
+     * withCount('reviews'). Removed reviews never count.
+     *
+     * @return array{average: float|null, count: int}
+     */
+    public function rating(): array
+    {
+        return [
+            'average' => $this->reviews_avg_rating !== null ? round((float) $this->reviews_avg_rating, 1) : null,
+            'count' => (int) $this->reviews_count,
+        ];
+    }
+
+    /**
+     * The rating with how many reviews gave each score, from 5 down to 1.
+     *
+     * @return array{average: float|null, count: int, distribution: list<array{rating: int, count: int}>}
+     */
+    public function ratingSummary(): array
+    {
+        $countsByRating = $this->reviews()
+            ->selectRaw('rating, count(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating');
+
+        $count = (int) $countsByRating->sum();
+        $points = $countsByRating->map(fn (int|string $total, int $rating): int => $rating * (int) $total)->sum();
+
+        return [
+            'average' => $count > 0 ? round($points / $count, 1) : null,
+            'count' => $count,
+            'distribution' => array_map(
+                fn (int $rating): array => ['rating' => $rating, 'count' => (int) ($countsByRating[$rating] ?? 0)],
+                [5, 4, 3, 2, 1],
+            ),
+        ];
+    }
+
     public function hasActiveRooms(): bool
     {
         return $this->rooms()->where('is_active', true)->exists();
@@ -191,6 +233,16 @@ class Hotel extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    /**
+     * Guests' reviews, excluding those removed by an admin.
+     *
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
     }
 
     /**

@@ -5,6 +5,7 @@ import {
     Globe,
     Hotel,
     LayoutGrid,
+    MessageSquareText,
     Sparkles,
     Tags,
     Users,
@@ -25,6 +26,7 @@ import { dashboard, home } from '@/routes';
 import { index as adminAmenitiesIndex } from '@/routes/admin/amenities';
 import { index as adminCategoriesIndex } from '@/routes/admin/categories';
 import { index as adminHotelsIndex } from '@/routes/admin/hotels';
+import { index as adminReviewsIndex } from '@/routes/admin/reviews';
 import { index as adminRoomTypesIndex } from '@/routes/admin/room-types';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as manageHotelsIndex } from '@/routes/manage/hotels';
@@ -57,6 +59,11 @@ const navGroupsByRole: Record<UserRole, NavGroup[]> = {
                     title: 'Reservations',
                     href: manageReservationsIndex(),
                     icon: CalendarCheck,
+                },
+                {
+                    title: 'Reviews',
+                    href: adminReviewsIndex(),
+                    icon: MessageSquareText,
                 },
             ],
         },

@@ -1,6 +1,10 @@
 <?php
 
 use App\Contracts\PaymentGateway;
+use App\Models\Hotel;
+use App\Models\Reservation;
+use App\Models\Review;
+use App\Models\Room;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Fakes\FakePaymentGateway;
 use Tests\TestCase;
@@ -49,6 +53,17 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * A guest's review of a past stay in one of the hotel's rooms.
+ */
+function reviewHotel(Hotel $hotel, int $rating = 4): Review
+{
+    $room = $hotel->rooms()->first() ?? Room::factory()->for($hotel)->create();
+    $reservation = Reservation::factory()->forRoom($room)->stay(-10)->create();
+
+    return Review::factory()->forReservation($reservation)->create(['rating' => $rating]);
 }
 
 /**

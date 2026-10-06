@@ -8,6 +8,7 @@ use App\Http\Controllers\Manage\HotelImageController;
 use App\Http\Controllers\Manage\HotelVisibilityController;
 use App\Http\Controllers\Manage\OfferController;
 use App\Http\Controllers\Manage\ReservationController;
+use App\Http\Controllers\Manage\ReviewController;
 use App\Http\Controllers\Manage\RoomController;
 use App\Http\Controllers\Manage\RoomImageController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,11 @@ Route::middleware(['auth', 'verified', 'role:owner,admin'])
 
             Route::resource('hotels.activities', ActivityController::class)->only(['index', 'store', 'update', 'destroy']);
             Route::resource('hotels.offers', OfferController::class)->only(['index', 'store', 'update', 'destroy']);
+
+            Route::get('hotels/{hotel}/reviews', [ReviewController::class, 'index'])->name('hotels.reviews.index');
+            Route::put('hotels/{hotel}/reviews/{review}/reply', [ReviewController::class, 'reply'])->name('hotels.reviews.reply.update');
+            Route::delete('hotels/{hotel}/reviews/{review}/reply', [ReviewController::class, 'destroyReply'])->name('hotels.reviews.reply.destroy');
+            Route::post('hotels/{hotel}/reviews/{review}/report', [ReviewController::class, 'report'])->name('hotels.reviews.report');
         });
 
         Route::get('reservations', [ReservationController::class, 'index'])->name('reservations.index');

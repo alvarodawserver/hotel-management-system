@@ -34,7 +34,8 @@ class HotelCompareController extends Controller
             ->published()
             ->whereKey($ids)
             ->with(['coverImage', 'amenities', 'categories'])
-            ->withCount('activities')
+            ->withCount(['activities', 'reviews'])
+            ->withAvg('reviews', 'rating')
             ->get()
             ->sortBy(fn (Hotel $hotel): int => (int) array_search($hotel->id, $ids, true))
             ->values();
@@ -58,6 +59,7 @@ class HotelCompareController extends Controller
                 'province' => $hotel->province->label(),
                 'municipality' => $hotel->municipality,
                 'stars' => $hotel->stars,
+                'rating' => $hotel->rating(),
                 'cover_url' => $hotel->coverImage?->url,
                 'price' => $searchHotels->cheapestStay($hotel, $criteria),
                 'amenity_ids' => $hotel->amenities->modelKeys(),

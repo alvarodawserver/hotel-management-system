@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import CancellationPolicyText from '@/components/catalog/cancellation-policy-text';
 import StarRating from '@/components/catalog/star-rating';
+import RatingBadge from '@/components/reviews/rating-badge';
 import { useTranslation } from '@/hooks/use-translation';
 import { amenityIcon } from '@/lib/amenity-icons';
 import { formatPrice } from '@/lib/utils';
@@ -11,6 +12,7 @@ import type {
     AmenityOption,
     CancellationTier,
     CardPrice,
+    HotelRating,
     SearchCriteria,
 } from '@/types';
 
@@ -21,6 +23,7 @@ type ComparedHotel = {
     province: string;
     municipality: string;
     stars: number | null;
+    rating: HotelRating;
     cover_url: string | null;
     price: CardPrice | null;
     amenity_ids: number[];
@@ -180,6 +183,24 @@ export default function CatalogCompare({ hotels, amenities, criteria }: Props) {
                                             <span className="text-muted-foreground">
                                                 {t('No room for your group')}
                                             </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </CompareRow>
+                            <CompareRow
+                                columns={columns}
+                                label={t('Guest rating')}
+                            >
+                                {hotels.map((hotel) => (
+                                    <div key={hotel.id}>
+                                        {hotel.rating.average === null ? (
+                                            <span className="text-muted-foreground">
+                                                {t('No reviews yet')}
+                                            </span>
+                                        ) : (
+                                            <RatingBadge
+                                                rating={hotel.rating}
+                                            />
                                         )}
                                     </div>
                                 ))}

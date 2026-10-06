@@ -122,6 +122,16 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     }
 
     /**
+     * Reviews the user wrote about their stays.
+     *
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
      * Get the user's preferred locale, used for notifications and mail.
      */
     public function preferredLocale(): ?string

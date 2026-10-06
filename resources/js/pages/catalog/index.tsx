@@ -301,6 +301,10 @@ export default function CatalogIndex({
                                             label: t('Recommended'),
                                         },
                                         {
+                                            value: 'rating',
+                                            label: t('Top rated'),
+                                        },
+                                        {
                                             value: 'price_asc',
                                             label: t('Price: low to high'),
                                         },

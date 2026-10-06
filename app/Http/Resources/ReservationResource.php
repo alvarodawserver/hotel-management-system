@@ -8,7 +8,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * A reservation as shown to its customer and to the hotel. Expects the
- * hotel (with its images) and the room (with its type) to be loaded.
+ * hotel (with its images) and the room (with its type) to be loaded; the
+ * guest's review is included when "reviewIncludingRemoved.user" is loaded.
  *
  * @mixin Reservation
  */
@@ -63,6 +64,11 @@ class ReservationResource extends JsonResource
                 'name' => $this->room->name,
                 'room_type' => $this->room->roomType->translation(),
             ],
+            // Only on the customer's pages, which load the review even if removed.
+            'can_be_reviewed' => $this->when($this->relationLoaded('reviewIncludingRemoved'), fn (): bool => $this->canBeReviewed()),
+            'review' => $this->when($this->relationLoaded('reviewIncludingRemoved'), fn (): ?array => $this->reviewIncludingRemoved === null
+                ? null
+                : ReviewResource::make($this->reviewIncludingRemoved->setRelation('reservation', $this->resource))->resolve()),
             'customer' => $this->whenLoaded('user', fn (): array => [
                 'name' => $this->user->name,
                 'email' => $this->user->email,

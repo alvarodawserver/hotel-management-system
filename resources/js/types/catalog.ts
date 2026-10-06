@@ -1,4 +1,5 @@
 import type { CancellationTier } from '@/types/hotels';
+import type { HotelRating } from '@/types/reviews';
 
 export type SearchCriteria = {
     q: string | null;
@@ -11,7 +12,7 @@ export type SearchCriteria = {
     stars: number | null;
     amenities: number[];
     categories: number[];
-    sort: 'recommended' | 'price_asc' | 'price_desc';
+    sort: 'recommended' | 'rating' | 'price_asc' | 'price_desc';
 };
 
 /** Cheapest stay for the searched dates (or tonight). Amounts in cents. */
@@ -35,6 +36,7 @@ export type HotelCardData = {
     longitude: number | null;
     amenities: { name: string; icon: string }[];
     price: CardPrice;
+    rating: HotelRating;
 };
 
 export type StayNight = {

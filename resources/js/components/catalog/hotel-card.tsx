@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import StarRating from '@/components/catalog/star-rating';
+import RatingBadge from '@/components/reviews/rating-badge';
 import { useTranslation } from '@/hooks/use-translation';
 import { amenityIcon } from '@/lib/amenity-icons';
 import { cn, formatPrice } from '@/lib/utils';
@@ -53,7 +54,10 @@ export default function HotelCard({
 
             <div className="flex flex-1 flex-col gap-3 p-4">
                 <div className="space-y-1">
-                    <StarRating stars={hotel.stars} />
+                    <div className="flex min-h-5 flex-wrap items-center justify-between gap-2">
+                        <StarRating stars={hotel.stars} />
+                        <RatingBadge rating={hotel.rating} />
+                    </div>
                     <h3 className="font-display text-lg leading-tight font-semibold">
                         <Link
                             href={show(hotel.slug, { query })}

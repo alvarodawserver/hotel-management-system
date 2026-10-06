@@ -5,21 +5,26 @@ namespace App\Http\Controllers\Catalog;
 use App\Actions\Pricing\CalculateStayPrice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\HotelSearchRequest;
+use App\Http\Resources\ReviewResource;
 use App\Models\Activity;
 use App\Models\Amenity;
 use App\Models\Category;
 use App\Models\Hotel;
 use App\Models\Image;
 use App\Models\Offer;
+use App\Models\Review;
 use App\Models\Room;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class HotelPageController extends Controller
 {
+    public const REVIEWS_PER_PAGE = 6;
+
     /**
      * The public hotel page. Hidden or blocked hotels are not found, except
      * for their owner and admins, who see them as a preview.
@@ -84,10 +89,28 @@ class HotelPageController extends Controller
                     'room_type_name' => $offer->roomType?->translation(),
                 ])->values(),
             ],
-            'roomGroups' => $this->roomGroups($hotel, $criteria, $calculateStayPrice),
+            // Lazy, so loading more reviews does not price the rooms again.
+            'roomGroups' => fn (): Collection => $this->roomGroups($hotel, $criteria, $calculateStayPrice),
+            'rating' => fn (): array => $hotel->ratingSummary(),
+            'reviews' => Inertia::scroll(fn () => $this->reviews($hotel)),
             'criteria' => $criteria,
             'isPreview' => $isPreview,
         ]);
+    }
+
+    /**
+     * The newest reviews first, a few at a time ("Show more reviews").
+     *
+     * @return LengthAwarePaginator<int, array<mixed>>
+     */
+    private function reviews(Hotel $hotel): LengthAwarePaginator
+    {
+        return $hotel->reviews()
+            ->with(['user', 'reservation.room.roomType'])
+            ->latest()
+            ->orderByDesc('id')
+            ->paginate(self::REVIEWS_PER_PAGE, pageName: 'reviews_page')
+            ->through(fn (Review $review): array => ReviewResource::make($review)->resolve());
     }
 
     /**

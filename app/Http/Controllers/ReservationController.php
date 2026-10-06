@@ -48,6 +48,8 @@ class ReservationController extends Controller
         $reservations = Reservation::query()
             ->whereBelongsTo($request->user())
             ->with(['hotel.images', 'room.roomType'])
+            // Past stays show whether they still await the guest's review.
+            ->when($tab === 'past', fn (Builder $query) => $query->with('reviewIncludingRemoved.user'))
             ->when($tab === 'upcoming', fn (Builder $query) => $query
                 ->blocking()
                 ->whereDate('check_out', '>=', $today)
@@ -149,7 +151,7 @@ class ReservationController extends Controller
             $syncCheckoutSession->handle($reservation);
         }
 
-        $reservation->load(['hotel.images', 'room.roomType']);
+        $reservation->load(['hotel.images', 'room.roomType', 'reviewIncludingRemoved.user']);
 
         return Inertia::render('reservations/show', [
             'reservation' => ReservationResource::make($reservation)->resolve(),

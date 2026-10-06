@@ -17,13 +17,14 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 ### For travellers
 
 - **Search** by destination (town, province or hotel name, accent-insensitive, with suggestions as you type), dates, adults and children.
-- **Filters** by price per night, stars, travel style (beach, family-friendly, luxury…) and amenities; sort by recommended or price.
+- **Filters** by price per night, stars, travel style (beach, family-friendly, luxury…) and amenities; sort by recommended, guest rating or price.
 - **List and map side by side**: hovering a hotel highlights its pin on the map.
 - **Compare** up to three hotels side by side: price for your dates, amenities, travel style and cancellation policy.
 - **Hotel page** with photo gallery, rooms grouped by type with the total price of the stay (night-by-night breakdown, offers already applied) and how many are still free for your dates, amenities, activities, location map with directions and the cancellation policy in plain words.
 - **Book and pay online** with Stripe Checkout. The room is held for 30 minutes while you pay, and two people can never book the same room for the same nights.
 - **My reservations**: upcoming, past and cancelled stays, each with its booking code and price breakdown.
 - **Cancel up to the check-in day** and get the refund back on your card automatically, following the hotel's cancellation tiers. The cancel dialog tells you the exact amount before you confirm.
+- **Review your stay** from the check-out day: a 1–5 rating and a comment, which you can edit or delete later. Each hotel shows its average guest rating, how many reviews gave each score and the hotel's replies.
 
 ### For hotel owners
 
@@ -35,6 +36,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - **Offers**: a percentage discount for a range of nights, on the whole hotel or one room type. If several offers cover the same night, the best one applies; discounts never stack.
 - Publish or hide the hotel at any time (hiding never cancels existing bookings) and **preview** its public page before publishing.
 - **Reservations** of their hotels, with filters, the guest's contact details and requests. If the hotel cannot honour a booking, the owner cancels it with a reason and the guest gets a full refund.
+- **Reviews** of their hotels: reply publicly to guests, and report offensive reviews to the administrators (owners cannot delete reviews, so fair criticism stays).
 
 ### For administrators
 
@@ -42,11 +44,12 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - **Hotel moderation**: see every hotel, edit any of them and block those that break the rules, with a reason the owner can read.
 - **Catalogues**: amenities (with icon), categories and room types, each with a name in Spanish and English.
 - **Every reservation** on the platform, with a filter for refunds that failed and a button to retry them safely.
+- **Review moderation**: reports from owners first; removing a review asks for a reason, takes it out of the hotel's average and emails its author why.
 
 ### Across the platform
 
 - Interface in **Spanish and English**, with the language remembered per user.
-- **Emails in each recipient's language**: booking confirmed (with the price breakdown and cancellation policy) and cancellations with the exact refund for travellers; new bookings and guest cancellations for hotel owners. New accounts confirm their email address before booking.
+- **Emails in each recipient's language**: booking confirmed (with the price breakdown and cancellation policy) and cancellations with the exact refund for travellers; new bookings and guest cancellations for hotel owners; a notice with the reason when a review is removed. New accounts confirm their email address before booking.
 - **Light and dark mode** with a coastal colour palette.
 - Three roles (admin, owner, customer) with access rules enforced on the server; trying to open a page you can't use takes you back with a message instead of an error page.
 - One single place calculates prices, so the price shown is always the price charged.
@@ -59,7 +62,7 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 - [x] Public catalogue: home page, search with map, comparison and hotel page
 - [x] Reservations and payments with Stripe (with refunds following each hotel's cancellation policy)
 - [x] Transactional emails in each user's language
-- [ ] Reviews and ratings
+- [x] Reviews and ratings
 - [ ] Dashboards with statistics for owners and admins
 - [ ] Demo data
 

@@ -9,6 +9,7 @@ import {
     ReservationDetails,
 } from '@/components/reservations/reservation-details';
 import ReservationStatusBadge from '@/components/reservations/reservation-status-badge';
+import GuestReview from '@/components/reviews/guest-review';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -235,6 +236,8 @@ export default function ShowReservation({ reservation, refundQuote }: Props) {
                         </AlertDescription>
                     </Alert>
                 )}
+
+                <GuestReview reservation={reservation} />
 
                 <ReservationDetails reservation={reservation} />
 

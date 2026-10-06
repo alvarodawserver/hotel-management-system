@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -187,6 +188,21 @@ class Reservation extends Model
             && $this->check_in->toDateString() >= static::today()->toDateString();
     }
 
+    /**
+     * A confirmed stay can be reviewed from its check-out day, once. A review
+     * removed by an admin still counts, so the stay cannot be reviewed again.
+     */
+    public function canBeReviewed(): bool
+    {
+        if (! $this->isConfirmed() || $this->check_out->toDateString() > static::today()->toDateString()) {
+            return false;
+        }
+
+        return $this->relationLoaded('reviewIncludingRemoved')
+            ? $this->reviewIncludingRemoved === null
+            : ! $this->reviewIncludingRemoved()->exists();
+    }
+
     public function nights(): int
     {
         return (int) $this->check_in->diffInDays($this->check_out);
@@ -216,6 +232,27 @@ class Reservation extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class)->withTrashed();
+    }
+
+    /**
+     * The guest's review of the stay, excluding one removed by an admin.
+     *
+     * @return HasOne<Review, $this>
+     */
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    /**
+     * The guest's review even if an admin removed it, so its author can see
+     * why, and the stay cannot be reviewed again.
+     *
+     * @return HasOne<Review, $this>
+     */
+    public function reviewIncludingRemoved(): HasOne
+    {
+        return $this->hasOne(Review::class)->withTrashed();
     }
 
     /**

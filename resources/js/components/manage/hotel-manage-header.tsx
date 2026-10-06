@@ -11,6 +11,7 @@ import { edit, index as manageHotelsIndex } from '@/routes/manage/hotels';
 import { index as activitiesIndex } from '@/routes/manage/hotels/activities';
 import { index as imagesIndex } from '@/routes/manage/hotels/images';
 import { index as offersIndex } from '@/routes/manage/hotels/offers';
+import { index as reviewsIndex } from '@/routes/manage/hotels/reviews';
 import { index as roomsIndex } from '@/routes/manage/hotels/rooms';
 import type { HotelSummary } from '@/types';
 
@@ -29,6 +30,7 @@ export default function HotelManageHeader({ hotel }: { hotel: HotelSummary }) {
         { title: t('Photos'), href: imagesIndex(hotel.id) },
         { title: t('Activities'), href: activitiesIndex(hotel.id) },
         { title: t('Offers'), href: offersIndex(hotel.id) },
+        { title: t('Reviews'), href: reviewsIndex(hotel.id) },
     ];
 
     const backHref =

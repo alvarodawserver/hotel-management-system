@@ -111,6 +111,8 @@ class SearchHotels
                 'rooms' => fn ($query) => $query->bookableFor($guests, ...$this->availabilityRange($checkIn, $checkOut, $hasDates)),
                 'offers' => fn ($query) => $query->activeBetween($checkIn, $checkOut->subDay()),
             ])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->get();
     }
 
@@ -141,6 +143,7 @@ class SearchHotels
                 ->values()
                 ->all(),
             'price' => $pricing,
+            'rating' => $hotel->rating(),
             'created_at' => $hotel->created_at?->toIso8601String(),
         ];
     }
@@ -208,9 +211,18 @@ class SearchHotels
             'price_asc' => $cards->sortBy(fn (array $card): int => $card['price']['total']),
             'price_desc' => $cards->sortByDesc(fn (array $card): int => $card['price']['total']),
             'newest' => $cards->sortByDesc('created_at'),
-            // Recommended: hotels with an offer first, then by stars and name.
+            // Top rated: best average first, more reviews breaking ties; hotels
+            // without reviews last.
+            'rating' => $cards->sortBy([
+                fn (array $a, array $b): int => ($b['rating']['average'] ?? 0) <=> ($a['rating']['average'] ?? 0),
+                fn (array $a, array $b): int => $b['rating']['count'] <=> $a['rating']['count'],
+                fn (array $a, array $b): int => $a['name'] <=> $b['name'],
+            ]),
+            // Recommended: hotels with an offer first, then by guest rating,
+            // stars and name.
             default => $cards->sortBy([
                 fn (array $a, array $b): int => $b['price']['discount_percent'] <=> $a['price']['discount_percent'],
+                fn (array $a, array $b): int => ($b['rating']['average'] ?? 0) <=> ($a['rating']['average'] ?? 0),
                 fn (array $a, array $b): int => ($b['stars'] ?? 0) <=> ($a['stars'] ?? 0),
                 fn (array $a, array $b): int => $a['name'] <=> $b['name'],
             ]),

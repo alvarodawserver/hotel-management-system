@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Catalog\HotelPageController;
 use App\Models\Hotel;
 use App\Models\Offer;
 use App\Models\Reservation;
@@ -98,4 +99,37 @@ it('counts the rooms of each option still free for the dates', function () {
     ]))->assertInertia(fn (Assert $page) => $page
         ->where('roomGroups.0.rooms_count', 2)
         ->where('roomGroups.0.available_count', 1));
+});
+
+it('summarises the guest reviews, leaving out removed ones', function () {
+    $hotel = Hotel::factory()->visible()->create();
+    reviewHotel($hotel, 5);
+    reviewHotel($hotel, 4);
+    reviewHotel($hotel, 1)->delete();
+
+    $this->get(route('hotels.show', $hotel->slug))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('rating.average', 4.5)
+            ->where('rating.count', 2)
+            ->where('rating.distribution.0', ['rating' => 5, 'count' => 1])
+            ->where('rating.distribution.4', ['rating' => 1, 'count' => 0])
+            ->has('reviews.data', 2));
+});
+
+it('shows the newest reviews first, a page at a time', function () {
+    $hotel = Hotel::factory()->visible()->create();
+    $this->travel(-1)->days();
+    foreach (range(1, HotelPageController::REVIEWS_PER_PAGE) as $i) {
+        reviewHotel($hotel);
+    }
+    $this->travelBack();
+    $newest = reviewHotel($hotel);
+
+    $this->get(route('hotels.show', $hotel->slug))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('reviews.data', HotelPageController::REVIEWS_PER_PAGE)
+            ->where('reviews.data.0.id', $newest->id));
+
+    $this->get(route('hotels.show', [$hotel->slug, 'reviews_page' => 2]))
+        ->assertInertia(fn (Assert $page) => $page->has('reviews.data', 1));
 });

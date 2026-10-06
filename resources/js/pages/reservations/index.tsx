@@ -1,8 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
-import { CalendarDays, Luggage } from 'lucide-react';
+import { CalendarDays, Luggage, Star } from 'lucide-react';
 import Pagination from '@/components/pagination';
 import { RefundSummary } from '@/components/reservations/reservation-details';
 import ReservationStatusBadge from '@/components/reservations/reservation-status-badge';
+import { RatingStars } from '@/components/reviews/rating-input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDay } from '@/lib/dates';
@@ -90,6 +91,19 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
                                 {t('Complete the payment')} →
                             </p>
                         )}
+                        {reservation.can_be_reviewed && (
+                            <p className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                                <Star className="size-4 fill-sun text-sun" />
+                                {t('Review your stay')} →
+                            </p>
+                        )}
+                        {reservation.review &&
+                            !reservation.review.removed_at && (
+                                <RatingStars
+                                    rating={reservation.review.rating}
+                                    className="mt-2"
+                                />
+                            )}
                     </div>
                 </div>
             </Link>

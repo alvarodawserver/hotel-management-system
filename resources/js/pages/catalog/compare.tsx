@@ -49,7 +49,7 @@ function CompareRow({
 }) {
     return (
         <div
-            className="grid border-b py-3 text-sm"
+            className="grid gap-x-4 border-b py-3 text-sm"
             style={{ gridTemplateColumns: columns }}
         >
             <div className="pr-4 font-medium text-muted-foreground">
@@ -98,7 +98,12 @@ export default function CatalogCompare({ hotels, amenities, criteria }: Props) {
                     </p>
                 ) : (
                     <div className="overflow-x-auto">
-                        <div className="min-w-max">
+                        {/* Columns share the width; only narrow screens scroll. */}
+                        <div
+                            style={{
+                                minWidth: `${12 + hotels.length * 15}rem`,
+                            }}
+                        >
                             <div
                                 className="grid gap-x-4 pb-4"
                                 style={{ gridTemplateColumns: columns }}

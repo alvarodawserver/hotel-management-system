@@ -12,6 +12,18 @@ Travellers search and compare hotels in the five coastal provinces, hotel owners
 
 > 🎬 Demo video coming soon.
 
+### Screenshots
+
+![Home page: search by destination and dates, and the five coastal provinces](.github/screenshots/home.webp)
+
+| Search with filters and map                                                                                      | Hotel page                                                                      |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| ![Search results with filters, prices for the chosen dates and a map](.github/screenshots/search.webp)           | ![Hotel page with its rating and photo gallery](.github/screenshots/hotel.webp) |
+| **Compare up to three hotels**                                                                                   | **My reservations**                                                             |
+| ![Three hotels compared side by side](.github/screenshots/compare.webp)                                          | ![A customer's upcoming trips](.github/screenshots/reservations.webp)           |
+| **Hotel owner dashboard**                                                                                        | **Admin dashboard, dark mode**                                                  |
+| ![Owner dashboard with revenue, occupancy, pending tasks and arrivals](.github/screenshots/dashboard-owner.webp) | ![Admin dashboard in dark mode](.github/screenshots/dashboard-admin-dark.webp)  |
+
 ## Features
 
 ### For travellers

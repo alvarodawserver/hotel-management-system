@@ -49,7 +49,9 @@ export function StatTile({
                     <span
                         className={cn(
                             'inline-flex items-center gap-0.5 font-medium',
-                            isUp ? 'text-primary' : 'text-destructive',
+                            isUp
+                                ? 'text-primary'
+                                : 'text-destructive dark:text-destructive-foreground',
                         )}
                     >
                         {isUp ? (

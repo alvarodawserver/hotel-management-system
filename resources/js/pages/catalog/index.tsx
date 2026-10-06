@@ -1,17 +1,23 @@
 import { Form, Head, Link, router } from '@inertiajs/react';
-import { List, Map as MapIcon, SlidersHorizontal } from 'lucide-react';
+import { List, Map as MapIcon, SlidersHorizontal, Star } from 'lucide-react';
 import { useState } from 'react';
 import HotelSearchController from '@/actions/App/Http/Controllers/Catalog/HotelSearchController';
 import CompareTray from '@/components/catalog/compare-tray';
 import HotelCard from '@/components/catalog/hotel-card';
 import HotelMap from '@/components/catalog/hotel-map';
 import SearchBar from '@/components/catalog/search-bar';
-import NativeSelect from '@/components/native-select';
 import Pagination from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useCompare } from '@/hooks/use-compare';
 import { useTranslation } from '@/hooks/use-translation';
 import { amenityIcon } from '@/lib/amenity-icons';
@@ -32,6 +38,9 @@ type Props = {
     amenities: AmenityOption[];
     categories: CategoryOption[];
 };
+
+/** The stars option meaning "no minimum" (Radix items cannot have an empty value). */
+const ANY_STARS = 'any';
 
 /** The search parameters that change prices, carried to hotel and compare pages. */
 function stayQuery(criteria: SearchCriteria): Record<string, string | number> {
@@ -91,7 +100,11 @@ export default function CatalogIndex({
     const filters = (
         <Form
             {...HotelSearchController.form()}
-            transform={(data) => dropEmpty(data)}
+            transform={(data) =>
+                dropEmpty(
+                    data.stars === ANY_STARS ? { ...data, stars: '' } : data,
+                )
+            }
             options={{ preserveScroll: true }}
             className="space-y-6"
         >
@@ -119,6 +132,24 @@ export default function CatalogIndex({
                 />
             )}
             <input type="hidden" name="sort" value={criteria.sort} />
+
+            <div className="flex gap-2">
+                <Button type="submit" className="flex-1">
+                    {t('Apply filters')}
+                </Button>
+                <Button variant="ghost" asChild>
+                    <Link
+                        href={hotelsIndex({
+                            query: dropEmpty({
+                                q: criteria.q,
+                                ...query,
+                            }) as Record<string, string>,
+                        })}
+                    >
+                        {t('Clear')}
+                    </Link>
+                </Button>
+            </div>
 
             <fieldset className="space-y-2">
                 <legend className="text-sm font-semibold">
@@ -149,16 +180,29 @@ export default function CatalogIndex({
                 <Label htmlFor="stars" className="font-semibold">
                     {t('Stars')}
                 </Label>
-                <NativeSelect
-                    id="stars"
+                <Select
                     name="stars"
-                    defaultValue={criteria.stars ? String(criteria.stars) : ''}
-                    placeholder={t('Any')}
-                    options={[2, 3, 4, 5].map((stars) => ({
-                        value: String(stars),
-                        label: t(':count stars or more', { count: stars }),
-                    }))}
-                />
+                    defaultValue={
+                        criteria.stars ? String(criteria.stars) : ANY_STARS
+                    }
+                >
+                    <SelectTrigger id="stars" className="w-full">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={ANY_STARS}>{t('Any')}</SelectItem>
+                        {[2, 3, 4, 5].map((stars) => (
+                            <SelectItem key={stars} value={String(stars)}>
+                                <span className="flex items-center gap-1.5">
+                                    {t(':count stars or more', {
+                                        count: stars,
+                                    })}
+                                    <Star className="size-3.5 fill-current text-sun" />
+                                </span>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             <fieldset className="space-y-2">
@@ -207,24 +251,6 @@ export default function CatalogIndex({
                     );
                 })}
             </fieldset>
-
-            <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                    {t('Apply filters')}
-                </Button>
-                <Button variant="ghost" asChild>
-                    <Link
-                        href={hotelsIndex({
-                            query: dropEmpty({
-                                q: criteria.q,
-                                ...query,
-                            }) as Record<string, string>,
-                        })}
-                    >
-                        {t('Clear')}
-                    </Link>
-                </Button>
-            </div>
         </Form>
     );
 
@@ -288,32 +314,28 @@ export default function CatalogIndex({
                                 <Label htmlFor="sort" className="sr-only">
                                     {t('Sort by')}
                                 </Label>
-                                <NativeSelect
-                                    id="sort"
+                                <Select
                                     value={criteria.sort}
-                                    onChange={(event) =>
-                                        changeSort(event.target.value)
-                                    }
-                                    className="w-auto"
-                                    options={[
-                                        {
-                                            value: 'recommended',
-                                            label: t('Recommended'),
-                                        },
-                                        {
-                                            value: 'rating',
-                                            label: t('Top rated'),
-                                        },
-                                        {
-                                            value: 'price_asc',
-                                            label: t('Price: low to high'),
-                                        },
-                                        {
-                                            value: 'price_desc',
-                                            label: t('Price: high to low'),
-                                        },
-                                    ]}
-                                />
+                                    onValueChange={changeSort}
+                                >
+                                    <SelectTrigger id="sort">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent align="end">
+                                        <SelectItem value="recommended">
+                                            {t('Recommended')}
+                                        </SelectItem>
+                                        <SelectItem value="rating">
+                                            {t('Top rated')}
+                                        </SelectItem>
+                                        <SelectItem value="price_asc">
+                                            {t('Price: low to high')}
+                                        </SelectItem>
+                                        <SelectItem value="price_desc">
+                                            {t('Price: high to low')}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <Button
                                     variant="outline"
                                     size="icon"
